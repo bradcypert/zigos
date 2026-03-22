@@ -2,13 +2,33 @@
 // We can still import std for types and compile-time utilities.
 const StackTrace = @import("std").builtin.StackTrace;
 
+export var limine_base_revision: [3]u64 linksection(".limine_requests") = .{
+    0xf9562b2d5c95a6c8, // magic number 1
+    0x6a7b384944536bdc, // magic number 2
+    3, // revision we want, Limine writes 0 here if supported
+};
+
 // `export` makes this function visible to the linker by the exact name
 // "kernel_main" -- matching the ENTRY in our linker script
-
 // `noreturn` tells Zig this function never returns. If it did, there's
 // nothing to return to -- the CPU would execute whatever garbage is in
 // memory after our kernel.
 export fn kernel_main() noreturn {
+    // verify limine honored our base revision request.
+    // if index[2] is non-zero Limine didn't support revision 3
+    if (limine_base_revision[2] != 0) {
+        while (true) asm volatile ("hlt");
+    }
+
+    // Write "ZigOS" to VGA text mode memory at 0xB8000.
+    // Each u16 = [attribute (high byte)] [ASCII char (low byte)]
+    // 0x0F = white text on black background
+    const vga: [*]volatile u16 = @ptrFromInt(0xB8000);
+    const msg = "ZigOS booted";
+    for (msg, 0..) |char, i| {
+        vga[i] = (@as(u16, 0x0F) << 8) | char;
+    }
+
     // `hlt` suspends the CPU until the next interrupt
     // Cheaper than a busy spin, and correct behavior for "do nothing".
     while (true) {

@@ -5,6 +5,11 @@ SECTIONS {
   /* Start placing sections at the 1MB mark */
   . = 0x100000;
 
+  /* Keep Limine request structures - linker must not discard them */
+  .limine_requests : {
+    KEEP(*(.limine_requests .limine_requests.*))
+  }
+
   /* .text holds your executable code */ 
   .text : {
     *(.text .text.*)
