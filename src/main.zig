@@ -1,27 +1,33 @@
-const std = @import("std");
-const zigos = @import("zigos");
+// No @import("std") OS-level features are available -- we ARE the OS.
+// We can still import std for types and compile-time utilities.
+const StackTrace = @import("std").builtin.StackTrace;
 
-pub fn main() !void {
-    // Prints to stderr, ignoring potential errors.
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-    try zigos.bufferedPrint();
+// `export` makes this function visible to the linker by the exact name
+// "kernel_main" -- matching the ENTRY in our linker script
+
+// `noreturn` tells Zig this function never returns. If it did, there's
+// nothing to return to -- the CPU would execute whatever garbage is in
+// memory after our kernel.
+export fn kernel_main() noreturn {
+    // `hlt` suspends the CPU until the next interrupt
+    // Cheaper than a busy spin, and correct behavior for "do nothing".
+    while (true) {
+        asm volatile ("hlt");
+    }
 }
 
-test "simple test" {
-    const gpa = std.testing.allocator;
-    var list: std.ArrayList(i32) = .empty;
-    defer list.deinit(gpa); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(gpa, 42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
-
-test "fuzz example" {
-    const Context = struct {
-        fn testOne(context: @This(), input: []const u8) anyerror!void {
-            _ = context;
-            // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
-            try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input));
-        }
-    };
-    try std.testing.fuzz(Context{}, Context.testOne, .{});
+// Zig requires a panic handler. Normally the standard library provides one
+// (it prints to stderr and exits), but we have no stderr and no exit.
+// We provide our own that just halts.
+pub fn panic(
+    msg: []const u8,
+    error_return_trace: ?*StackTrace,
+    ret_addr: ?usize,
+) noreturn {
+    _ = msg;
+    _ = error_return_trace;
+    _ = ret_addr;
+    while (true) {
+        asm volatile ("hlt");
+    }
 }
