@@ -25,10 +25,12 @@ cp /usr/share/limine/BOOTX64.EFI iso_root/EFI/BOOT/
 
 echo "==> Writing Limine config..."
 cat >iso_root/boot/limine/limine.conf <<'EOF'
+timeout: 0
+
   /ZIGOS
-  COMMENT=ZigOS Minimal Kernel
-  PROTOCOL=limine
-  KERNEL_PATH=boot():/boot/kernel
+  COMMENT: ZigOS Minimal Kernel
+  PROTOCOL: limine
+  KERNEL_PATH: boot():/boot/kernel
 EOF
 
 echo "==> Building ISO with xorriso..."

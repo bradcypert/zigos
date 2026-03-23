@@ -1,6 +1,7 @@
 // No @import("std") OS-level features are available -- we ARE the OS.
 // We can still import std for types and compile-time utilities.
 const StackTrace = @import("std").builtin.StackTrace;
+const gdt = @import("gdt.zig");
 
 export var limine_base_revision: [3]u64 linksection(".limine_requests") = .{
     0xf9562b2d5c95a6c8, // magic number 1
@@ -20,11 +21,14 @@ export fn kernel_main() noreturn {
         while (true) asm volatile ("hlt");
     }
 
+    // Initialize the global descriptor table
+    gdt.init();
+
     // Write "ZigOS" to VGA text mode memory at 0xB8000.
     // Each u16 = [attribute (high byte)] [ASCII char (low byte)]
     // 0x0F = white text on black background
     const vga: [*]volatile u16 = @ptrFromInt(0xB8000);
-    const msg = "ZigOS booted";
+    const msg = "!!!ZigOS: GDT loaded!";
     for (msg, 0..) |char, i| {
         vga[i] = (@as(u16, 0x0F) << 8) | char;
     }

@@ -23,6 +23,11 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    kernel.use_llvm = true;
+    kernel.use_lld = true;
+    kernel.entry = .{ .symbol_name = "kernel_main" };
+
     kernel.setLinkerScript(b.path("linker.ld"));
+    kernel.addAssemblyFile(b.path("src/gdt_flush.s"));
     b.installArtifact(kernel);
 }
