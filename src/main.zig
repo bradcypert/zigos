@@ -3,6 +3,19 @@
 const StackTrace = @import("std").builtin.StackTrace;
 const gdt = @import("gdt.zig");
 const idt = @import("idt.zig");
+const limine = @import("limine.zig");
+const pmm = @import("pmm.zig");
+
+export var memmap_request: limine.MemMapRequest linksection(".limine_requests") = .{
+    .id = .{
+        0xc7b1dd30df4c8b88, // common magic shared by all Limine requests
+        0x0a82e883a194f07b,
+        0x67cf3d9d378a806f, // memmap-specific magic
+        0xe304acdfc50c3c62,
+    },
+    .revision = 0,
+    .response = null,
+};
 
 export var limine_base_revision: [3]u64 linksection(".limine_requests") = .{
     0xf9562b2d5c95a6c8, // magic number 1
@@ -40,6 +53,14 @@ export fn kernel_main() noreturn {
     // Initialize the interrupt descriptor table
     idt.init();
     serialWrite('I');
+
+    const memmap = memmap_request.response orelse {
+        serialWrite('M'); // M = memmap missing
+        while (true) asm volatile ("hlt");
+    };
+
+    pmm.init(memmap);
+    serialWrite('P');
 
     serialWrite('C');
     // Write "ZigOS" to VGA text mode memory at 0xB8000.
