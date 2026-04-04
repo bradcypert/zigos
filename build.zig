@@ -29,5 +29,6 @@ pub fn build(b: *std.Build) void {
 
     kernel.setLinkerScript(b.path("linker.ld"));
     kernel.addAssemblyFile(b.path("src/gdt_flush.s"));
+    kernel.addAssemblyFile(b.path("src/idt_stubs.s"));
     b.installArtifact(kernel);
 }

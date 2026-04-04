@@ -2,6 +2,7 @@
 // We can still import std for types and compile-time utilities.
 const StackTrace = @import("std").builtin.StackTrace;
 const gdt = @import("gdt.zig");
+const idt = @import("idt.zig");
 
 export var limine_base_revision: [3]u64 linksection(".limine_requests") = .{
     0xf9562b2d5c95a6c8, // magic number 1
@@ -36,6 +37,9 @@ export fn kernel_main() noreturn {
 
     // Initialize the global descriptor table
     gdt.init();
+    // Initialize the interrupt descriptor table
+    idt.init();
+    serialWrite('I');
 
     serialWrite('C');
     // Write "ZigOS" to VGA text mode memory at 0xB8000.
