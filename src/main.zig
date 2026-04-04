@@ -45,11 +45,11 @@ export fn kernel_main() noreturn {
     // Write "ZigOS" to VGA text mode memory at 0xB8000.
     // Each u16 = [attribute (high byte)] [ASCII char (low byte)]
     // 0x0F = white text on black background
-    // const vga: [*]volatile u16 = @ptrFromInt(0xB8000);
-    // const msg = "ZigOS: GDT loaded!";
-    // for (msg, 0..) |char, i| {
-    //    vga[i] = (@as(u16, 0x0F) << 8) | char;
-    // }
+    const vga: [*]volatile u16 = @ptrFromInt(0xB8000);
+    const msg = "ZigOS: GDT loaded!";
+    for (msg, 0..) |char, i| {
+        vga[i] = (@as(u16, 0x0F) << 8) | char;
+    }
 
     serialWrite('D');
 
